@@ -65,6 +65,8 @@ public class UserRepository {
     private PreparedStatement truncateByLoginStmt;
 
     private PreparedStatement truncateByEmailStmt;
+    
+    private PreparedStatement findByEmailStmt;
 
     public UserRepository(Session session, Validator validator) {
         this.session = session;
@@ -116,6 +118,8 @@ public class UserRepository {
             "SELECT id " +
                 "FROM user_by_email " +
                 "WHERE email     = :email");
+        
+        findByEmailStmt = session.prepare("SELECT * FROM user where email = :email");
 
         insertByEmailStmt = session.prepare(
             "INSERT INTO user_by_email (email, id) " +
@@ -167,6 +171,10 @@ public class UserRepository {
     public List<User> findAll() {
         return mapper.map(session.execute(findAllStmt.bind())).all();
     }
+    public List<User> findByEmail(String email) {
+        return mapper.map(session.execute(findByEmailStmt.bind().setString("email", email))).all();
+    }
+    
     public User save(User user) {
         Set<ConstraintViolation<User>> violations = validator.validate(user);
         if (violations != null && !violations.isEmpty()) {

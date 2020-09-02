@@ -1,13 +1,13 @@
 package sso.jwt.jobme.service;
 
-import sso.jwt.jobme.config.Constants;
-import sso.jwt.jobme.domain.User;
-import sso.jwt.jobme.repository.UserRepository;
-import sso.jwt.jobme.security.AuthoritiesConstants;
-import sso.jwt.jobme.security.SecurityUtils;
-import sso.jwt.jobme.service.dto.UserDTO;
-
-import io.github.jhipster.security.RandomUtil;
+import java.time.Instant;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Objects;
+import java.util.Optional;
+import java.util.Set;
+import java.util.UUID;
+import java.util.stream.Collectors;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -15,9 +15,14 @@ import org.springframework.cache.CacheManager;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
-import java.time.Instant;
-import java.util.*;
-import java.util.stream.Collectors;
+import io.github.jhipster.security.RandomUtil;
+import sso.jwt.jobme.config.Constants;
+import sso.jwt.jobme.domain.User;
+import sso.jwt.jobme.repository.UserRepository;
+import sso.jwt.jobme.security.AuthoritiesConstants;
+import sso.jwt.jobme.security.SecurityUtils;
+import sso.jwt.jobme.service.dto.UserDTO;
+import sso.jwt.jobme.service.mapper.UserMapper;
 
 /**
  * Service class for managing users.
@@ -181,7 +186,31 @@ public class UserService {
             })
             .map(UserDTO::new);
     }
-
+    
+    public Optional<UserDTO> updateTicked(UserDTO userDTO) {
+        return Optional.of(userRepository
+            .findByEmail(userDTO.getEmail())
+            .filter(Optional::isPresent)
+            .map(Optional::get)
+            .map(user -> {
+                this.clearUserCaches(user);
+                user.setLogin(userDTO.getLogin().toLowerCase());
+                user.setFirstName(userDTO.getFirstName());
+                user.setLastName(userDTO.getLastName());
+                if (userDTO.getEmail() != null) {
+                    user.setEmail(userDTO.getEmail().toLowerCase());
+                }
+                user.setActivated(userDTO.isActivated());
+                user.setLangKey(userDTO.getLangKey());
+                user.setAuthorities(userDTO.getAuthorities());
+                userRepository.save(user);
+                this.clearUserCaches(user);
+                log.debug("Changed Information for User: {}", user);
+                return user;
+            })
+            .map(UserDTO::new);
+    }
+    
     public void deleteUser(String login) {
         userRepository.findOneByLogin(login).ifPresent(user -> {
             userRepository.delete(user);
@@ -236,6 +265,13 @@ public class UserService {
             .filter(user -> !Constants.ANONYMOUS_USER.equals(user.getLogin()))
             .map(UserDTO::new)
             .collect(Collectors.toList());
+    }
+    
+    public List<UserDTO> findByEmail(String email){
+    	return userRepository.findByEmail(email).stream()
+                .filter(user -> !Constants.ANONYMOUS_USER.equals(user.getLogin()))
+                .map(UserDTO::new)
+                .collect(Collectors.toList());
     }
 
     public Optional<User> getUserWithAuthoritiesByLogin(String login) {

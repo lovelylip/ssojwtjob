@@ -36,6 +36,16 @@ public class UserDTO {
 
     private Set<String> authorities;
 
+    private String encrypt;
+
+    public String getEncrypt() {
+        return encrypt;
+    }
+
+    public void setEncrypt(String encrypt) {
+        this.encrypt = encrypt;
+    }
+
     public UserDTO() {
         // Empty constructor needed for Jackson.
     }

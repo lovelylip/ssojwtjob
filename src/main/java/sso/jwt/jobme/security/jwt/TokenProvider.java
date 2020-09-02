@@ -5,13 +5,22 @@ import java.security.Key;
 import java.util.*;
 import java.util.stream.Collectors;
 import javax.annotation.PostConstruct;
+import javax.servlet.http.Cookie;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import javax.servlet.http.HttpSession;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.boot.configurationprocessor.json.JSONException;
+import org.springframework.boot.configurationprocessor.json.JSONObject;
+import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
+import org.springframework.security.core.context.SecurityContext;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.User;
 import org.springframework.stereotype.Component;
 import org.springframework.util.StringUtils;
@@ -20,6 +29,13 @@ import io.github.jhipster.config.JHipsterProperties;
 import io.jsonwebtoken.*;
 import io.jsonwebtoken.io.Decoders;
 import io.jsonwebtoken.security.Keys;
+import org.springframework.web.client.RestTemplate;
+import sso.jwt.jobme.config.Constants;
+import sso.jwt.jobme.security.SecurityUtils;
+import sso.jwt.jobme.service.dto.UserDTO;
+import sso.jwt.jobme.utils.DateUtils;
+
+import static org.springframework.security.web.context.HttpSessionSecurityContextRepository.SPRING_SECURITY_CONTEXT_KEY;
 
 @Component
 public class TokenProvider {
@@ -107,5 +123,88 @@ public class TokenProvider {
             log.trace("Invalid JWT token trace.", e);
         }
         return false;
+    }
+
+    public String authenByTicketFromCas(HttpServletRequest request, HttpServletResponse response, String ticket, String DOMAIN_CAS, String ipHost) {
+        RestTemplate restTemplate = new RestTemplate();
+        UserDTO userDTO = new UserDTO();
+        String jwt = null;
+        Map<String, String> mapResult = SecurityUtils.getEmailFromIAM(DOMAIN_CAS, ipHost, ticket);
+        String email = mapResult.get("email");
+        System.out.println("=================> " + email);
+        JSONObject json = new JSONObject();
+        try {
+            json.put("email", email);
+            json.put("ticket", ticket);
+        } catch (JSONException e) {
+            e.printStackTrace();
+        }
+        String strToEncrypt = json.toString();
+        String encrypted = DateUtils.EncryptionFromBytes(strToEncrypt);
+        userDTO.setEncrypt(encrypted);
+
+        //Remove Cookie
+        remoteCookie(request, response);
+
+        //Neu email khong ton tai tren he thong SSO
+        if(email == null || "".equals(email)){
+            //Set Cookie
+            String pCookieName = "NO-TICKET";
+            Cookie cookie = new Cookie(pCookieName, "valid");
+            cookie.setMaxAge(-1);
+            cookie.setHttpOnly(false);
+            cookie.setPath("/");
+        }
+
+        ResponseEntity<UserDTO> responseEntity = restTemplate.postForEntity(ipHost + "/api/public/getUserName", userDTO, UserDTO.class);
+        UserDTO userDTO1 = responseEntity.getBody();
+        if(userDTO1 != null && userDTO1.getLogin() != null) {
+            UsernamePasswordAuthenticationToken authReq = new UsernamePasswordAuthenticationToken(userDTO1.getLogin(), Constants.DEFAULT_PASSWORD);
+            SecurityContext sc = SecurityContextHolder.getContext();
+            sc.setAuthentication(authReq);
+            HttpSession session = request.getSession(true);
+            session.setAttribute(SPRING_SECURITY_CONTEXT_KEY, sc);
+            jwt = createToken(authReq, true);
+            try {
+                json.put("email", email);
+                json.put("ticket", ticket);
+                json.put("jwt", jwt);
+            } catch (JSONException e) {
+                e.printStackTrace();
+            }
+            strToEncrypt = json.toString();
+            encrypted = DateUtils.EncryptionFromBytes(strToEncrypt);
+            userDTO.setEncrypt(encrypted);
+            restTemplate.postForEntity(ipHost + "/api/public/updateTicked", userDTO, Void.class);
+
+            //Set Cookie
+            String pCookieName = "NO-TICKET";
+            Cookie cookie = new Cookie(pCookieName, "SUCCESS");
+            cookie.setMaxAge(-1);
+            cookie.setHttpOnly(false);
+            cookie.setPath("/");
+            response.addCookie(cookie);
+        }else{
+            String pCookieName = "NO-TICKET";
+            Cookie cookie = new Cookie(pCookieName, "EMAIL_NOT_EXIST_IN_TCS");
+            cookie.setMaxAge(-1);
+            cookie.setHttpOnly(false);
+            cookie.setPath("/");
+            response.addCookie(cookie);
+        }
+        return jwt;
+    }
+
+    private void remoteCookie(HttpServletRequest req, HttpServletResponse resp) {
+        Cookie[] cookies = req.getCookies();
+        if (cookies != null)
+            for (Cookie cookie : cookies) {
+                if(cookie.getName() != null && cookie.getName().equals("NO-TICKET")) {
+                    cookie.setValue("");
+                    cookie.setPath("/");
+                    cookie.setMaxAge(0);
+                    resp.addCookie(cookie);
+                }
+            }
     }
 }

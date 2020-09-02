@@ -39,7 +39,7 @@ export class LoginModalComponent implements AfterViewInit {
   }
 
   login(): void {
-    this.loginService
+    /*this.loginService
       .login({
         username: this.loginForm.get('username')!.value,
         password: this.loginForm.get('password')!.value,
@@ -58,7 +58,8 @@ export class LoginModalComponent implements AfterViewInit {
           }
         },
         () => (this.authenticationError = true)
-      );
+      );*/
+    window.location.replace('https://ssotest.baohiemxahoi.gov.vn:8443/login?service=http://tdqt.bhxh.gov.vn:8080/');
   }
 
   register(): void {

@@ -1,17 +1,17 @@
 package sso.jwt.jobme;
 
-import sso.jwt.jobme.config.ApplicationProperties;
-
 import io.github.jhipster.config.DefaultProfileUtil;
 import io.github.jhipster.config.JHipsterConstants;
-
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
+import org.springframework.context.annotation.PropertySource;
 import org.springframework.core.env.Environment;
+import org.springframework.scheduling.annotation.EnableScheduling;
+import sso.jwt.jobme.config.ApplicationProperties;
 
 import javax.annotation.PostConstruct;
 import java.net.InetAddress;
@@ -21,6 +21,8 @@ import java.util.Collection;
 
 @SpringBootApplication
 @EnableConfigurationProperties({ApplicationProperties.class})
+@EnableScheduling
+@PropertySource("classpath:config/application.properties")
 public class JwtjobApp {
 
     private static final Logger log = LoggerFactory.getLogger(JwtjobApp.class);
