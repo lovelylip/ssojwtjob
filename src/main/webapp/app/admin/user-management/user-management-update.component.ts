@@ -5,6 +5,7 @@ import { ActivatedRoute } from '@angular/router';
 import { LANGUAGES } from 'app/core/language/language.constants';
 import { User } from 'app/core/user/user.model';
 import { UserService } from 'app/core/user/user.service';
+import { PrimeNGConfig } from 'primeng/api';
 
 @Component({
   selector: 'jhi-user-mgmt-update',
@@ -35,9 +36,15 @@ export class UserManagementUpdateComponent implements OnInit {
     authorities: [],
   });
 
-  constructor(private userService: UserService, private route: ActivatedRoute, private fb: FormBuilder) {}
+  constructor(
+    private userService: UserService,
+    private route: ActivatedRoute,
+    private fb: FormBuilder,
+    private primeNGConfig: PrimeNGConfig
+  ) {}
 
   ngOnInit(): void {
+    this.primeNGConfig.ripple = true;
     this.route.data.subscribe(({ user }) => {
       if (user) {
         this.user = user;

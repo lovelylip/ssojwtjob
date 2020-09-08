@@ -1,6 +1,9 @@
 import { NgModule } from '@angular/core';
 import { BrowserModule } from '@angular/platform-browser';
+import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
+import { NoopAnimationsModule } from '@angular/platform-browser/animations';
 
+import { RouterModule } from '@angular/router';
 import './vendor';
 import { JwtjobSharedModule } from 'app/shared/shared.module';
 import { JwtjobCoreModule } from 'app/core/core.module';
@@ -17,13 +20,16 @@ import { ErrorComponent } from './layouts/error/error.component';
 
 @NgModule({
   imports: [
-    BrowserModule,
     JwtjobSharedModule,
     JwtjobCoreModule,
     JwtjobHomeModule,
     // jhipster-needle-angular-add-module JHipster will add new module here
     JwtjobEntityModule,
     JwtjobAppRoutingModule,
+    BrowserModule,
+    BrowserAnimationsModule,
+    NoopAnimationsModule,
+    RouterModule,
   ],
   declarations: [MainComponent, NavbarComponent, ErrorComponent, PageRibbonComponent, ActiveMenuDirective, FooterComponent],
   bootstrap: [MainComponent],
