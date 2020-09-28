@@ -14,6 +14,7 @@ import javax.servlet.ServletResponse;
 import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import javax.servlet.http.HttpSession;
 import java.io.IOException;
 
 /**
@@ -42,15 +43,17 @@ public class JWTFilter extends GenericFilterBean {
         HttpServletRequest httpServletRequest = (HttpServletRequest) servletRequest;
         String ticket = httpServletRequest.getParameter("ticket");
         HttpServletResponse resp = (HttpServletResponse) servletResponse;
-
         String ipHost = HTTPS + "://" + httpServletRequest.getServerName();
         if (httpServletRequest.getServerPort() != 80 && httpServletRequest.getServerPort() != 443) {
             ipHost += ":" + httpServletRequest.getServerPort();
         }
+        HttpSession session = httpServletRequest.getSession();
 
         if(!Strings.isNullOrEmpty(ticket)){
             String jwt =  tokenProvider.authenByTicketFromCas(httpServletRequest, resp, ticket, DOMAIN_CAS, ipHost);
-            Cookie cookie = new Cookie("Authorization", jwt);
+            Cookie cookie = new Cookie(AUTHORIZATION_HEADER, jwt);
+            session.setAttribute(AUTHORIZATION_TOKEN, jwt);
+            resp.setHeader(AUTHORIZATION_HEADER, jwt);
             resp.addCookie(cookie);
             resp.sendRedirect(httpServletRequest.getContextPath() + "/");
         }else {

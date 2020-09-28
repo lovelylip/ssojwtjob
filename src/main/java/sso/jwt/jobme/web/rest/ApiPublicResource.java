@@ -25,7 +25,7 @@ import sso.jwt.jobme.utils.DateUtils;
 @RestController
 @RequestMapping("/api/public")
 public class ApiPublicResource {
-	
+
 	private static class AccountResourceException extends RuntimeException {
         private AccountResourceException(String message) {
             super(message);
@@ -33,9 +33,9 @@ public class ApiPublicResource {
     }
 
     private final Logger log = LoggerFactory.getLogger(ApiPublicResource.class);
-	
+
 	private final UserService userService;
-	
+
 	public ApiPublicResource(UserService userService) {
 		this.userService = userService;
 	}
@@ -54,7 +54,7 @@ public class ApiPublicResource {
         if(!listUserDTOs.isEmpty()) return listUserDTOs.get(0);
         else return new UserDTO();
     }
-	
+
 	@PostMapping(value = "/updateTicked")
     public void updateTicked(HttpServletRequest request, HttpServletResponse response, @RequestBody UserDTO userDTO) throws URISyntaxException, JSONException {
         String encrypted = userDTO.getEncrypt();
@@ -65,7 +65,7 @@ public class ApiPublicResource {
 	        String email = String.valueOf(jsonObj.get("email"));
 	        String ticket = String.valueOf(jsonObj.get("ticket"));
 	        String jwt = String.valueOf(jsonObj.get("jwt"));
-	        userService.updateTicked(email,ticket, jwt);
+//	        userService.updateTicked(email,ticket, jwt);
 	    }
     }
 }
